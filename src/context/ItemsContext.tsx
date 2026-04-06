@@ -86,6 +86,7 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
           missing: "Item marked as missing again",
           found: `Item found and returned`,
           surrendered: `Item surrendered by ${isAnonymous ? "someone (anonymous)" : foundBy || "unknown"}`,
+          rejected: "Item report was rejected",
         };
         const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: actionMap[status], by: "Admin" };
         return {
