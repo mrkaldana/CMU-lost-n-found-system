@@ -6,9 +6,11 @@ interface ItemsContextType {
   addItem: (item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">) => void;
   updateItem: (id: string, updates: Partial<LostItem>, actionBy?: string) => void;
   updateStatus: (id: string, status: ItemStatus, foundBy?: string, isAnonymous?: boolean) => void;
+  approveItem: (id: string) => void;
+  rejectItem: (id: string, reason?: string) => void;
   deleteItem: (id: string) => void;
   getItem: (id: string) => LostItem | undefined;
-  stats: { total: number; missing: number; found: number; surrendered: number };
+  stats: { total: number; pending: number; missing: number; found: number; surrendered: number };
 }
 
 const ItemsContext = createContext<ItemsContextType | undefined>(undefined);
