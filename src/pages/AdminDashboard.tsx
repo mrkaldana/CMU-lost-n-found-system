@@ -1,6 +1,6 @@
 import { useItems } from "@/context/ItemsContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Search, CheckCircle, HandHeart, TrendingUp } from "lucide-react";
+import { Package, Search, CheckCircle, HandHeart, TrendingUp, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LostItem, STATUS_CONFIG } from "@/types";
@@ -51,7 +51,8 @@ const AdminDashboard = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard title="Pending" value={stats.pending} icon={Clock} color="bg-status-pending/10 text-status-pending" />
         <StatCard title="Total Reports" value={stats.total} icon={Package} color="bg-primary/10 text-primary" />
         <StatCard title="Missing" value={stats.missing} icon={Search} color="bg-status-missing/10 text-status-missing" />
         <StatCard title="Found" value={stats.found} icon={CheckCircle} color="bg-status-found/10 text-status-found" />

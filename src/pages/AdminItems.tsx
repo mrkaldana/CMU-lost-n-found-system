@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft } from "lucide-react";
+import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft, CheckCircle, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; onClose: () => void }) {
@@ -143,23 +143,38 @@ function ActivityDialog({ item, open, onClose }: { item: LostItem; open: boolean
 }
 
 const AdminItems = () => {
-  const { items, deleteItem } = useItems();
+  const { items, deleteItem, approveItem, rejectItem } = useItems();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [editItem, setEditItem] = useState<LostItem | null>(null);
   const [statusItem, setStatusItem] = useState<LostItem | null>(null);
   const [activityItem, setActivityItem] = useState<LostItem | null>(null);
 
-  const filtered = items.filter(
-    (i) =>
+  const filtered = items.filter((i) => {
+    const matchSearch =
       i.itemName.toLowerCase().includes(search.toLowerCase()) ||
       i.refId.toLowerCase().includes(search.toLowerCase()) ||
-      i.reportedBy.toLowerCase().includes(search.toLowerCase())
-  );
+      i.reportedBy.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "all" || i.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   const handleDelete = (item: LostItem) => {
     if (confirm(`Delete "${item.itemName}" (${item.refId})?`)) {
       deleteItem(item.id);
       toast.success("Item deleted.");
+    }
+  };
+
+  const handleApprove = (item: LostItem) => {
+    approveItem(item.id);
+    toast.success(`Report "${item.itemName}" approved.`);
+  };
+
+  const handleReject = (item: LostItem) => {
+    if (confirm(`Reject report "${item.itemName}" (${item.refId})?`)) {
+      rejectItem(item.id);
+      toast.success(`Report "${item.itemName}" rejected.`);
     }
   };
 
@@ -175,9 +190,24 @@ const AdminItems = () => {
         </div>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search items..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search items..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="missing">Missing</SelectItem>
+            <SelectItem value="found">Found</SelectItem>
+            <SelectItem value="surrendered">Surrendered</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-lg border overflow-x-auto">
@@ -202,12 +232,25 @@ const AdminItems = () => {
                 <TableCell><StatusBadge status={item.status} /></TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditItem(item)} title="Edit">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setStatusItem(item)} title="Update Status">
-                      <ArrowRightLeft className="h-3.5 w-3.5" />
-                    </Button>
+                    {item.status === "pending" ? (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => handleApprove(item)} title="Approve" className="text-status-found hover:text-status-found">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleReject(item)} title="Reject" className="text-destructive hover:text-destructive">
+                          <XCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => setEditItem(item)} title="Edit">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setStatusItem(item)} title="Update Status">
+                          <ArrowRightLeft className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => setActivityItem(item)} title="Activity Log">
                       <Clock className="h-3.5 w-3.5" />
                     </Button>

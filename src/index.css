@@ -41,6 +41,7 @@ All colors MUST be HSL.
     --status-missing: 0 72% 55%;
     --status-found: 145 60% 42%;
     --status-surrendered: 38 90% 55%;
+    --status-pending: 210 15% 55%;
 
     --sidebar-background: 215 25% 12%;
     --sidebar-foreground: 210 20% 90%;

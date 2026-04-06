@@ -6,9 +6,11 @@ interface ItemsContextType {
   addItem: (item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">) => void;
   updateItem: (id: string, updates: Partial<LostItem>, actionBy?: string) => void;
   updateStatus: (id: string, status: ItemStatus, foundBy?: string, isAnonymous?: boolean) => void;
+  approveItem: (id: string) => void;
+  rejectItem: (id: string, reason?: string) => void;
   deleteItem: (id: string) => void;
   getItem: (id: string) => LostItem | undefined;
-  stats: { total: number; missing: number; found: number; surrendered: number };
+  stats: { total: number; pending: number; missing: number; found: number; surrendered: number };
 }
 
 const ItemsContext = createContext<ItemsContextType | undefined>(undefined);
@@ -59,8 +61,8 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
       id: crypto.randomUUID(),
       refId: generateRefId(),
       dateReported: new Date().toISOString().split("T")[0],
-      status: "missing",
-      activityLog: [{ id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: "Item reported as missing", by: item.reportedBy }],
+      status: "pending",
+      activityLog: [{ id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: "Report submitted — awaiting admin approval", by: item.reportedBy }],
     };
     setItems((prev) => [newItem, ...prev]);
   }, []);
@@ -80,9 +82,11 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
       prev.map((item) => {
         if (item.id !== id) return item;
         const actionMap: Record<ItemStatus, string> = {
+          pending: "Item set back to pending",
           missing: "Item marked as missing again",
           found: `Item found and returned`,
           surrendered: `Item surrendered by ${isAnonymous ? "someone (anonymous)" : foundBy || "unknown"}`,
+          rejected: "Item report was rejected",
         };
         const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: actionMap[status], by: "Admin" };
         return {
@@ -97,6 +101,26 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const approveItem = useCallback((id: string) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: "Report approved by admin", by: "Admin" };
+        return { ...item, status: "missing" as ItemStatus, activityLog: [...item.activityLog, log] };
+      })
+    );
+  }, []);
+
+  const rejectItem = useCallback((id: string, reason?: string) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: `Report rejected by admin${reason ? ": " + reason : ""}`, by: "Admin" };
+        return { ...item, status: "rejected" as any, activityLog: [...item.activityLog, log] };
+      })
+    );
+  }, []);
+
   const deleteItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
@@ -104,14 +128,15 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
   const getItem = useCallback((id: string) => items.find((item) => item.id === id), [items]);
 
   const stats = {
-    total: items.length,
+    total: items.filter((i) => i.status !== "rejected").length,
+    pending: items.filter((i) => i.status === "pending").length,
     missing: items.filter((i) => i.status === "missing").length,
     found: items.filter((i) => i.status === "found").length,
     surrendered: items.filter((i) => i.status === "surrendered").length,
   };
 
   return (
-    <ItemsContext.Provider value={{ items, addItem, updateItem, updateStatus, deleteItem, getItem, stats }}>
+    <ItemsContext.Provider value={{ items, addItem, updateItem, updateStatus, approveItem, rejectItem, deleteItem, getItem, stats }}>
       {children}
     </ItemsContext.Provider>
   );
