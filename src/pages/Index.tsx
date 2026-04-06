@@ -14,7 +14,9 @@ const Index = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  const filtered = items.filter((item) => {
+  const approvedItems = items.filter((i) => i.status !== "pending" && i.status !== "rejected");
+
+  const filtered = approvedItems.filter((item) => {
     const matchSearch =
       item.itemName.toLowerCase().includes(search.toLowerCase()) ||
       item.refId.toLowerCase().includes(search.toLowerCase()) ||
