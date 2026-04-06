@@ -1,10 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Package, ShieldCheck } from "lucide-react";
+import { Search, Package, LogIn, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith("/admin");
+  const { user, logout } = useAuth();
+
+  // Don't show navbar on admin pages or auth pages
+  const isAdminPage = location.pathname.startsWith("/admin");
+  const isAuthPage = ["/login", "/register", "/forgot-password"].includes(location.pathname);
+  if (isAdminPage || isAuthPage) return null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md">
@@ -21,16 +27,24 @@ export function Navbar() {
               <Search className="h-4 w-4 mr-1.5" /> Browse
             </Link>
           </Button>
-          <Button variant={location.pathname === "/report" ? "secondary" : "ghost"} size="sm" asChild>
-            <Link to="/report">
-              <Package className="h-4 w-4 mr-1.5" /> Report
-            </Link>
-          </Button>
-          <Button variant={isAdmin ? "default" : "outline"} size="sm" asChild>
-            <Link to="/admin">
-              <ShieldCheck className="h-4 w-4 mr-1.5" /> Admin
-            </Link>
-          </Button>
+          {user && (
+            <Button variant={location.pathname === "/report" ? "secondary" : "ghost"} size="sm" asChild>
+              <Link to="/report">
+                <Package className="h-4 w-4 mr-1.5" /> Report
+              </Link>
+            </Button>
+          )}
+          {user ? (
+            <Button variant="ghost" size="sm" onClick={logout}>
+              <LogOut className="h-4 w-4 mr-1.5" /> {user.name.split(" ")[0]}
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/login">
+                <LogIn className="h-4 w-4 mr-1.5" /> Sign In
+              </Link>
+            </Button>
+          )}
         </nav>
       </div>
     </header>
