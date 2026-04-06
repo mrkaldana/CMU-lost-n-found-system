@@ -61,8 +61,8 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
       id: crypto.randomUUID(),
       refId: generateRefId(),
       dateReported: new Date().toISOString().split("T")[0],
-      status: "missing",
-      activityLog: [{ id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: "Item reported as missing", by: item.reportedBy }],
+      status: "pending",
+      activityLog: [{ id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: "Report submitted — awaiting admin approval", by: item.reportedBy }],
     };
     setItems((prev) => [newItem, ...prev]);
   }, []);
