@@ -1,4 +1,4 @@
-export type ItemStatus = "pending" | "missing" | "found" | "surrendered";
+export type ItemStatus = "pending" | "missing" | "found" | "surrendered" | "rejected";
 
 export type ItemCategory = "electronics" | "clothing" | "accessories" | "books" | "bags" | "sports" | "other";
 
