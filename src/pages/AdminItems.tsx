@@ -232,12 +232,25 @@ const AdminItems = () => {
                 <TableCell><StatusBadge status={item.status} /></TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditItem(item)} title="Edit">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setStatusItem(item)} title="Update Status">
-                      <ArrowRightLeft className="h-3.5 w-3.5" />
-                    </Button>
+                    {item.status === "pending" ? (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => handleApprove(item)} title="Approve" className="text-status-found hover:text-status-found">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleReject(item)} title="Reject" className="text-destructive hover:text-destructive">
+                          <XCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => setEditItem(item)} title="Edit">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setStatusItem(item)} title="Update Status">
+                          <ArrowRightLeft className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => setActivityItem(item)} title="Activity Log">
                       <Clock className="h-3.5 w-3.5" />
                     </Button>
