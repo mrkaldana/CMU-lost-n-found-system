@@ -1,0 +1,45 @@
+export type ItemStatus = "missing" | "found" | "surrendered";
+
+export type ItemCategory = "electronics" | "clothing" | "accessories" | "books" | "bags" | "sports" | "other";
+
+export interface ActivityLog {
+  id: string;
+  date: string;
+  action: string;
+  by: string;
+}
+
+export interface LostItem {
+  id: string;
+  refId: string;
+  itemName: string;
+  description: string;
+  category: ItemCategory;
+  location: string;
+  dateLost: string;
+  dateReported: string;
+  reportedBy: string;
+  contactEmail: string;
+  status: ItemStatus;
+  foundBy?: string;
+  isFoundByAnonymous?: boolean;
+  dateResolved?: string;
+  imageUrl?: string;
+  activityLog: ActivityLog[];
+}
+
+export const CATEGORIES: { value: ItemCategory; label: string }[] = [
+  { value: "electronics", label: "Electronics" },
+  { value: "clothing", label: "Clothing" },
+  { value: "accessories", label: "Accessories" },
+  { value: "books", label: "Books & Documents" },
+  { value: "bags", label: "Bags & Wallets" },
+  { value: "sports", label: "Sports Equipment" },
+  { value: "other", label: "Other" },
+];
+
+export const STATUS_CONFIG: Record<ItemStatus, { label: string; className: string }> = {
+  missing: { label: "Missing", className: "bg-status-missing text-primary-foreground" },
+  found: { label: "Found", className: "bg-status-found text-primary-foreground" },
+  surrendered: { label: "Surrendered", className: "bg-status-surrendered text-primary-foreground" },
+};
