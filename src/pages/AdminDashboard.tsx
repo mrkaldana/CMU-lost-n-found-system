@@ -1,6 +1,6 @@
 import { useItems } from "@/context/ItemsContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Search, CheckCircle, HandHeart, TrendingUp } from "lucide-react";
+import { Package, Search, CheckCircle, HandHeart, TrendingUp, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LostItem, STATUS_CONFIG } from "@/types";
