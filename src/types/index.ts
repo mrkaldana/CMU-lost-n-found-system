@@ -39,6 +39,7 @@ export const CATEGORIES: { value: ItemCategory; label: string }[] = [
 ];
 
 export const STATUS_CONFIG: Record<ItemStatus, { label: string; className: string }> = {
+  pending: { label: "Pending", className: "bg-status-pending text-primary-foreground" },
   missing: { label: "Missing", className: "bg-status-missing text-primary-foreground" },
   found: { label: "Found", className: "bg-status-found text-primary-foreground" },
   surrendered: { label: "Surrendered", className: "bg-status-surrendered text-primary-foreground" },
