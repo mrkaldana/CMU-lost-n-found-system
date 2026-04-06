@@ -51,6 +51,7 @@ export default {
           missing: "hsl(var(--status-missing))",
           found: "hsl(var(--status-found))",
           surrendered: "hsl(var(--status-surrendered))",
+          pending: "hsl(var(--status-pending))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
