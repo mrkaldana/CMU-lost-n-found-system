@@ -143,23 +143,38 @@ function ActivityDialog({ item, open, onClose }: { item: LostItem; open: boolean
 }
 
 const AdminItems = () => {
-  const { items, deleteItem } = useItems();
+  const { items, deleteItem, approveItem, rejectItem } = useItems();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [editItem, setEditItem] = useState<LostItem | null>(null);
   const [statusItem, setStatusItem] = useState<LostItem | null>(null);
   const [activityItem, setActivityItem] = useState<LostItem | null>(null);
 
-  const filtered = items.filter(
-    (i) =>
+  const filtered = items.filter((i) => {
+    const matchSearch =
       i.itemName.toLowerCase().includes(search.toLowerCase()) ||
       i.refId.toLowerCase().includes(search.toLowerCase()) ||
-      i.reportedBy.toLowerCase().includes(search.toLowerCase())
-  );
+      i.reportedBy.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "all" || i.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   const handleDelete = (item: LostItem) => {
     if (confirm(`Delete "${item.itemName}" (${item.refId})?`)) {
       deleteItem(item.id);
       toast.success("Item deleted.");
+    }
+  };
+
+  const handleApprove = (item: LostItem) => {
+    approveItem(item.id);
+    toast.success(`Report "${item.itemName}" approved.`);
+  };
+
+  const handleReject = (item: LostItem) => {
+    if (confirm(`Reject report "${item.itemName}" (${item.refId})?`)) {
+      rejectItem(item.id);
+      toast.success(`Report "${item.itemName}" rejected.`);
     }
   };
 
