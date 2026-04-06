@@ -100,6 +100,26 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const approveItem = useCallback((id: string) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: "Report approved by admin", by: "Admin" };
+        return { ...item, status: "missing" as ItemStatus, activityLog: [...item.activityLog, log] };
+      })
+    );
+  }, []);
+
+  const rejectItem = useCallback((id: string, reason?: string) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: `Report rejected by admin${reason ? ": " + reason : ""}`, by: "Admin" };
+        return { ...item, status: "rejected" as any, activityLog: [...item.activityLog, log] };
+      })
+    );
+  }, []);
+
   const deleteItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
@@ -107,14 +127,15 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
   const getItem = useCallback((id: string) => items.find((item) => item.id === id), [items]);
 
   const stats = {
-    total: items.length,
+    total: items.filter((i) => i.status !== "rejected").length,
+    pending: items.filter((i) => i.status === "pending").length,
     missing: items.filter((i) => i.status === "missing").length,
     found: items.filter((i) => i.status === "found").length,
     surrendered: items.filter((i) => i.status === "surrendered").length,
   };
 
   return (
-    <ItemsContext.Provider value={{ items, addItem, updateItem, updateStatus, deleteItem, getItem, stats }}>
+    <ItemsContext.Provider value={{ items, addItem, updateItem, updateStatus, approveItem, rejectItem, deleteItem, getItem, stats }}>
       {children}
     </ItemsContext.Provider>
   );
