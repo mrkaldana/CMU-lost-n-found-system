@@ -82,6 +82,7 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
       prev.map((item) => {
         if (item.id !== id) return item;
         const actionMap: Record<ItemStatus, string> = {
+          pending: "Item set back to pending",
           missing: "Item marked as missing again",
           found: `Item found and returned`,
           surrendered: `Item surrendered by ${isAnonymous ? "someone (anonymous)" : foundBy || "unknown"}`,
