@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft, CheckCircle, XCircle } from "lucide-react";
+import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft, CheckCircle, XCircle, Plus } from "lucide-react";
+import { WalkInDialog } from "@/components/WalkInDialog";
 import { Link } from "react-router-dom";
 
 function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; onClose: () => void }) {
