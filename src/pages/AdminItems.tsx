@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft, CheckCircle, XCircle } from "lucide-react";
+import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft, CheckCircle, XCircle, Plus } from "lucide-react";
+import { WalkInDialog } from "@/components/WalkInDialog";
 import { Link } from "react-router-dom";
 
 function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; onClose: () => void }) {
@@ -149,6 +150,7 @@ const AdminItems = () => {
   const [editItem, setEditItem] = useState<LostItem | null>(null);
   const [statusItem, setStatusItem] = useState<LostItem | null>(null);
   const [activityItem, setActivityItem] = useState<LostItem | null>(null);
+  const [walkInOpen, setWalkInOpen] = useState(false);
 
   const filtered = items.filter((i) => {
     const matchSearch =
@@ -184,10 +186,13 @@ const AdminItems = () => {
         <Button variant="ghost" size="icon" asChild>
           <Link to="/admin"><ChevronLeft className="h-4 w-4" /></Link>
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">Manage Items</h1>
           <p className="text-muted-foreground text-sm">{items.length} total reports</p>
         </div>
+        <Button onClick={() => setWalkInOpen(true)} className="gap-1.5">
+          <Plus className="h-4 w-4" /> Walk-in Report
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
@@ -273,6 +278,7 @@ const AdminItems = () => {
       {editItem && <EditDialog item={editItem} open={!!editItem} onClose={() => setEditItem(null)} />}
       {statusItem && <StatusDialog item={statusItem} open={!!statusItem} onClose={() => setStatusItem(null)} />}
       {activityItem && <ActivityDialog item={activityItem} open={!!activityItem} onClose={() => setActivityItem(null)} />}
+      <WalkInDialog open={walkInOpen} onClose={() => setWalkInOpen(false)} />
     </div>
   );
 };
