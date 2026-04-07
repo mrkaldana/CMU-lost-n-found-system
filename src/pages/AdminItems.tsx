@@ -150,6 +150,7 @@ const AdminItems = () => {
   const [editItem, setEditItem] = useState<LostItem | null>(null);
   const [statusItem, setStatusItem] = useState<LostItem | null>(null);
   const [activityItem, setActivityItem] = useState<LostItem | null>(null);
+  const [walkInOpen, setWalkInOpen] = useState(false);
 
   const filtered = items.filter((i) => {
     const matchSearch =
