@@ -3,7 +3,7 @@ import { LostItem, ItemStatus, ActivityLog } from "@/types";
 
 interface ItemsContextType {
   items: LostItem[];
-  addItem: (item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">) => void;
+  addItem: (item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">, options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }) => void;
   updateItem: (id: string, updates: Partial<LostItem>, actionBy?: string) => void;
   updateStatus: (id: string, status: ItemStatus, foundBy?: string, isAnonymous?: boolean) => void;
   approveItem: (id: string) => void;
