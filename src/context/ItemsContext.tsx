@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { LostItem, ItemStatus, ActivityLog } from "@/types";
 
+
 interface ItemsContextType {
   items: LostItem[];
   addItem: (item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">, options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }) => void;
