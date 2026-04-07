@@ -186,10 +186,13 @@ const AdminItems = () => {
         <Button variant="ghost" size="icon" asChild>
           <Link to="/admin"><ChevronLeft className="h-4 w-4" /></Link>
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">Manage Items</h1>
           <p className="text-muted-foreground text-sm">{items.length} total reports</p>
         </div>
+        <Button onClick={() => setWalkInOpen(true)} className="gap-1.5">
+          <Plus className="h-4 w-4" /> Walk-in Report
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
