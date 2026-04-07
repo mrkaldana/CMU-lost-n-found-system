@@ -278,6 +278,7 @@ const AdminItems = () => {
       {editItem && <EditDialog item={editItem} open={!!editItem} onClose={() => setEditItem(null)} />}
       {statusItem && <StatusDialog item={statusItem} open={!!statusItem} onClose={() => setStatusItem(null)} />}
       {activityItem && <ActivityDialog item={activityItem} open={!!activityItem} onClose={() => setActivityItem(null)} />}
+      <WalkInDialog open={walkInOpen} onClose={() => setWalkInOpen(false)} />
     </div>
   );
 };

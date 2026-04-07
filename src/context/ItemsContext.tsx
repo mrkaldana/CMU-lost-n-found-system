@@ -55,14 +55,25 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  const addItem = useCallback((item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">) => {
+  const addItem = useCallback((item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">, options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }) => {
+    const status = options?.status || "pending";
+    const isWalkIn = status !== "pending";
+    const actionMap: Record<string, string> = {
+      pending: "Report submitted — awaiting admin approval",
+      missing: "Walk-in report added by admin — item marked as missing",
+      found: "Walk-in report added by admin — item marked as found",
+      surrendered: `Walk-in report added by admin — item surrendered by ${options?.isAnonymous ? "someone (anonymous)" : options?.foundBy || "unknown"}`,
+    };
     const newItem: LostItem = {
       ...item,
       id: crypto.randomUUID(),
       refId: generateRefId(),
       dateReported: new Date().toISOString().split("T")[0],
-      status: "pending",
-      activityLog: [{ id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: "Report submitted — awaiting admin approval", by: item.reportedBy }],
+      status,
+      foundBy: options?.isAnonymous ? "Anonymous" : options?.foundBy,
+      isFoundByAnonymous: options?.isAnonymous,
+      dateResolved: (status === "found" || status === "surrendered") ? new Date().toISOString().split("T")[0] : undefined,
+      activityLog: [{ id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: actionMap[status] || "Item added", by: isWalkIn ? "Admin" : item.reportedBy }],
     };
     setItems((prev) => [newItem, ...prev]);
   }, []);
