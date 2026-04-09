@@ -81,12 +81,12 @@ function RecentItem({ item }: { item: LostItem }) {
             <HoverCardContent
               sideOffset={8}
               collisionPadding={12}
-              className="w-auto max-w-[calc(100vw-24px)] p-2"
+              className="flex h-[min(420px,calc(100vh-40px))] w-[min(560px,calc(100vw-40px))] items-center justify-center p-2"
             >
               <img
                 src={item.imageUrl}
                 alt={`${item.itemName} full preview`}
-                className="h-auto max-h-[calc(100vh-24px)] w-auto max-w-[min(560px,calc(100vw-40px))] rounded-md object-contain"
+                className="h-full w-full rounded-md object-contain"
               />
             </HoverCardContent>
           </HoverCard>

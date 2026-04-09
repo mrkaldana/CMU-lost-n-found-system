@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "@/context/ItemsContext";
-import { CATEGORIES, ItemCategory } from "@/types";
+import { CATEGORIES, ItemCategory, ItemStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,7 +17,10 @@ const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const Report = () => {
   const { addItem } = useItems();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialReportType: Extract<ItemStatus, "missing" | "found"> = searchParams.get("type") === "found" ? "found" : "missing";
   const [form, setForm] = useState({
+    reportType: initialReportType,
     itemName: "",
     description: "",
     category: "" as ItemCategory | "",
@@ -73,8 +76,10 @@ const Report = () => {
         reportedBy: form.reportedBy,
         contactEmail: form.contactEmail,
         imageUrl: form.imageUrl || undefined,
+      }, {
+        initialStatus: form.reportType,
       });
-      toast.success("Report submitted successfully! Your reference ID has been generated.");
+      toast.success(`${form.reportType === "found" ? "Found-item" : "Lost-item"} report submitted successfully! Your reference ID has been generated.`);
       navigate("/");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to submit report.");
@@ -89,12 +94,27 @@ const Report = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <PackagePlus className="h-5 w-5 text-primary" />
-            <CardTitle>Report a Lost Item</CardTitle>
+            <CardTitle>{form.reportType === "found" ? "Report a Found Item" : "Report a Lost Item"}</CardTitle>
           </div>
-          <CardDescription>Fill in the details below. A unique reference ID will be generated for tracking.</CardDescription>
+          <CardDescription>
+            Fill in the details below. A unique reference ID will be generated for tracking.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reportType">Report Type *</Label>
+              <Select
+                value={form.reportType}
+                onValueChange={(v) => setForm((prev) => ({ ...prev, reportType: v as Extract<ItemStatus, "missing" | "found"> }))}
+              >
+                <SelectTrigger id="reportType"><SelectValue placeholder="Select report type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="missing">I Lost an Item</SelectItem>
+                  <SelectItem value="found">I Found an Item</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="itemName">Item Name *</Label>
@@ -137,7 +157,7 @@ const Report = () => {
                 onChange={(coords) => setForm((prev) => ({ ...prev, locationCoordinates: coords }))}
               />
               <p className="text-xs text-muted-foreground">
-                Click on the map to pin where the item was lost/found.
+                Click on the map to pin where the item was {form.reportType === "found" ? "found" : "lost"}.
                 {form.locationCoordinates
                   ? ` Selected: ${form.locationCoordinates.lat}, ${form.locationCoordinates.lng}`
                   : ""}
@@ -146,12 +166,22 @@ const Report = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="location">Last Seen Location *</Label>
-                <Input id="location" placeholder="e.g. Library 2nd Floor" value={form.location} onChange={(e) => update("location", e.target.value)} />
+                <Label htmlFor="location">{form.reportType === "found" ? "Where You Found It *" : "Last Seen Location *"}</Label>
+                <Input
+                  id="location"
+                  placeholder={form.reportType === "found" ? "e.g. Near the cafeteria entrance" : "e.g. Library 2nd Floor"}
+                  value={form.location}
+                  onChange={(e) => update("location", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dateLost">Date Lost *</Label>
-                <Input id="dateLost" type="date" value={form.dateLost} onChange={(e) => update("dateLost", e.target.value)} />
+                <Label htmlFor="dateLost">{form.reportType === "found" ? "Date Found *" : "Date Lost *"}</Label>
+                <Input
+                  id="dateLost"
+                  type="date"
+                  value={form.dateLost}
+                  onChange={(e) => update("dateLost", e.target.value)}
+                />
               </div>
             </div>
 
@@ -168,7 +198,9 @@ const Report = () => {
 
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
               <Button type="button" variant="outline" onClick={() => navigate("/")} className="w-full sm:w-auto">Cancel</Button>
-              <Button type="submit" className="w-full sm:flex-1">Submit Report</Button>
+              <Button type="submit" className="w-full sm:flex-1">
+                Submit {form.reportType === "found" ? "Found" : "Lost"} Report
+              </Button>
             </div>
           </form>
         </CardContent>

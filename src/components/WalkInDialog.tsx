@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { LocationPickerMap } from "@/components/LocationPickerMap";
 import { toast } from "sonner";
 
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
 interface WalkInDialogProps {
   open: boolean;
   onClose: () => void;
@@ -27,10 +29,38 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
     dateLost: new Date().toISOString().split("T")[0],
     reportedBy: "",
     contactEmail: "",
+    imageUrl: "",
     status: "missing" as ItemStatus,
     foundBy: "",
     isAnonymous: false,
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file.");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error("Image size must be 5MB or less.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setForm((prev) => ({ ...prev, imageUrl: result }));
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read the selected image.");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async () => {
     if (!form.itemName || !form.location || !form.locationCoordinates || !form.reportedBy) {
@@ -49,6 +79,7 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           dateLost: form.dateLost,
           reportedBy: form.reportedBy,
           contactEmail: form.contactEmail,
+          imageUrl: form.imageUrl || undefined,
         },
         {
           status: form.status,
@@ -68,6 +99,7 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
         dateLost: new Date().toISOString().split("T")[0],
         reportedBy: "",
         contactEmail: "",
+        imageUrl: "",
         status: "missing",
         foundBy: "",
         isAnonymous: false,
@@ -92,6 +124,17 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           <div className="space-y-1">
             <Label>Description</Label>
             <Textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="Describe the item..." />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="walkin-item-image">Item Image</Label>
+            <Input id="walkin-item-image" type="file" accept="image/*" onChange={handleImageChange} />
+            {form.imageUrl && (
+              <img
+                src={form.imageUrl}
+                alt="Item preview"
+                className="h-36 w-full max-w-xs rounded-md border object-cover"
+              />
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">

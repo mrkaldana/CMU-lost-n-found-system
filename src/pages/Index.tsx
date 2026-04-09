@@ -36,11 +36,18 @@ const Index = () => {
           <p className="text-primary-foreground/80 max-w-md mx-auto">
             Search through reported items or file a new report. We'll help you find it.
           </p>
-          <Button size="lg" variant="secondary" className="w-full sm:w-auto" asChild>
-            <Link to="/report">
-              <Plus className="h-4 w-4 mr-2" /> Report Lost Item
-            </Link>
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-center">
+            <Button size="lg" variant="secondary" className="w-full sm:w-auto" asChild>
+              <Link to="/report?type=missing">
+                <Plus className="h-4 w-4 mr-2" /> Report Lost Item
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="w-full border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white sm:w-auto" asChild>
+              <Link to="/report?type=found">
+                <Plus className="h-4 w-4 mr-2" /> Report Found Item
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 

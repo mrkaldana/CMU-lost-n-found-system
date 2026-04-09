@@ -72,6 +72,7 @@ export async function createItem(req: Request, res: Response) {
     imageUrl?: string;
     reportedBy?: string;
     contactEmail?: string;
+    status?: "missing" | "found" | "surrendered";
   }>;
 
   const title = (body.title || body.itemName || "").trim();
@@ -84,12 +85,16 @@ export async function createItem(req: Request, res: Response) {
     return res.status(400).json({ message: "locationCoordinates (lat, lng) are required" });
   }
 
+  const requestedStatus = body.status;
+  const initialStatus = requestedStatus === "found" || requestedStatus === "surrendered" ? requestedStatus : "missing";
+  const initialAction = initialStatus === "missing" ? "Item reported as missing" : initialStatus === "found" ? "Item reported as found" : "Item reported as surrendered";
+
   const now = todayISO();
   const activityLog = [
     {
       id: crypto.randomUUID(),
       date: now,
-      action: "Item reported as missing",
+      action: initialAction,
       by: body.reportedBy || req.user.name
     }
   ];
@@ -108,7 +113,7 @@ export async function createItem(req: Request, res: Response) {
     title,
     description: body.description,
     category: body.category,
-    status: "missing",
+    status: initialStatus,
     location: body.location,
     locationCoordinates,
     dateLost: body.dateLost,

@@ -8,7 +8,7 @@ interface ItemsContextType {
   items: LostItem[];
   addItem: (
     item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">,
-    options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }
+    options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean; initialStatus?: Extract<ItemStatus, "missing" | "found" | "surrendered"> }
   ) => Promise<void>;
   updateItem: (id: string, updates: Partial<LostItem>) => Promise<void>;
   updateStatus: (id: string, status: ItemStatus, foundBy?: string, isAnonymous?: boolean) => Promise<void>;
@@ -45,13 +45,16 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
   const addItem = useCallback(
     async (
       item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">,
-      options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }
+      options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean; initialStatus?: Extract<ItemStatus, "missing" | "found" | "surrendered"> }
     ) => {
       if (!token) throw new Error("Please sign in first.");
 
       const created = await apiRequest<LostItem>("/api/items", {
         method: "POST",
-        body: JSON.stringify(item),
+        body: JSON.stringify({
+          ...item,
+          status: options?.initialStatus,
+        }),
         token,
       });
 

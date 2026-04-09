@@ -11,6 +11,7 @@ import { errorHandler, notFound } from "./src/middleware/errorHandler";
 dotenv.config();
 
 const app = express();
+const REQUEST_BODY_LIMIT = "8mb";
 
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
   .split(",")
@@ -63,7 +64,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: REQUEST_BODY_LIMIT }));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 

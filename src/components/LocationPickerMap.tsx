@@ -18,6 +18,11 @@ export function LocationPickerMap({ value, onChange }: LocationPickerMapProps) {
   const mapElementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.CircleMarker | null>(null);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     if (!mapElementRef.current || mapRef.current) return;
@@ -37,7 +42,7 @@ export function LocationPickerMap({ value, onChange }: LocationPickerMapProps) {
         lat: Number(event.latlng.lat.toFixed(6)),
         lng: Number(event.latlng.lng.toFixed(6)),
       };
-      onChange(coords);
+      onChangeRef.current(coords);
     });
 
     mapRef.current = map;
@@ -47,7 +52,7 @@ export function LocationPickerMap({ value, onChange }: LocationPickerMapProps) {
       mapRef.current = null;
       markerRef.current = null;
     };
-  }, [center, onChange]);
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;

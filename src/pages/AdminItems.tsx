@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { useItems } from "@/context/ItemsContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LostItem, ItemStatus, CATEGORIES, ItemCategory } from "@/types";
@@ -17,9 +17,44 @@ import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft, CheckCircle
 import { WalkInDialog } from "@/components/WalkInDialog";
 import { Link } from "react-router-dom";
 
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
 function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; onClose: () => void }) {
   const { updateItem } = useItems();
-  const [form, setForm] = useState({ itemName: item.itemName, description: item.description, category: item.category, location: item.location });
+  const [form, setForm] = useState({
+    itemName: item.itemName,
+    description: item.description,
+    category: item.category,
+    location: item.location,
+    imageUrl: item.imageUrl || "",
+  });
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file.");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error("Image size must be 5MB or less.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setForm((prev) => ({ ...prev, imageUrl: result }));
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read the selected image.");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async () => {
     try {
@@ -46,6 +81,17 @@ function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; on
           <div className="space-y-1">
             <Label>Description</Label>
             <Textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="edit-item-image">Item Image</Label>
+            <Input id="edit-item-image" type="file" accept="image/*" onChange={handleImageChange} />
+            {form.imageUrl && (
+              <img
+                src={form.imageUrl}
+                alt="Item preview"
+                className="h-36 w-full max-w-xs rounded-md border object-cover"
+              />
+            )}
           </div>
           <div className="space-y-1">
             <Label>Category</Label>
@@ -339,12 +385,12 @@ const AdminItems = () => {
                         <HoverCardContent
                           sideOffset={8}
                           collisionPadding={12}
-                          className="w-auto max-w-[calc(100vw-24px)] p-2"
+                          className="flex h-[min(420px,calc(100vh-40px))] w-[min(560px,calc(100vw-40px))] items-center justify-center p-2"
                         >
                           <img
                             src={item.imageUrl}
                             alt={`${item.itemName} full preview`}
-                            className="h-auto max-h-[calc(100vh-24px)] w-auto max-w-[min(560px,calc(100vw-40px))] rounded-md object-contain"
+                            className="h-full w-full rounded-md object-contain"
                           />
                         </HoverCardContent>
                       </HoverCard>
