@@ -5,21 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Package, LogIn } from "lucide-react";
+import { PasswordInput } from "@/components/PasswordInput";
+import { Package, LogIn, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const { login, isLoginLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(email, password)) {
+    if (await login(email, password)) {
       toast({ title: "Welcome back!", description: "You have been logged in." });
-      navigate("/");
+      navigate("/", { replace: true });
     } else {
       toast({ title: "Login failed", description: "Invalid email or password.", variant: "destructive" });
     }
@@ -43,10 +44,18 @@ const Login = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+              <PasswordInput id="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
-            <Button type="submit" className="w-full">
-              <LogIn className="h-4 w-4 mr-2" /> Sign In
+            <Button type="submit" className="w-full" disabled={isLoginLoading}>
+              {isLoginLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Signing In...
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4 mr-2" /> Sign In
+                </>
+              )}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm space-y-1">

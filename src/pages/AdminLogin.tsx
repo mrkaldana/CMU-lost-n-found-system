@@ -5,21 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck } from "lucide-react";
+import { PasswordInput } from "@/components/PasswordInput";
+import { ShieldCheck, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminLogin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { adminLogin } = useAuth();
+  const { adminLogin, isLoginLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminLogin(username, password)) {
+    if (await adminLogin(username, password)) {
       toast({ title: "Admin access granted", description: "Welcome, Administrator." });
-      navigate("/admin");
+      navigate("/admin", { replace: true });
     } else {
       toast({ title: "Access denied", description: "Invalid admin credentials.", variant: "destructive" });
     }
@@ -43,10 +44,18 @@ const AdminLogin = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+              <PasswordInput id="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
-            <Button type="submit" className="w-full">
-              <ShieldCheck className="h-4 w-4 mr-2" /> Sign In as Admin
+            <Button type="submit" className="w-full" disabled={isLoginLoading}>
+              {isLoginLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Signing In...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4 mr-2" /> Sign In as Admin
+                </>
+              )}
             </Button>
           </form>
         </CardContent>

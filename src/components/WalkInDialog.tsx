@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LocationPickerMap } from "@/components/LocationPickerMap";
 import { toast } from "sonner";
 
 interface WalkInDialogProps {
@@ -22,6 +23,7 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
     description: "",
     category: "other" as ItemCategory,
     location: "",
+    locationCoordinates: undefined as { lat: number; lng: number } | undefined,
     dateLost: new Date().toISOString().split("T")[0],
     reportedBy: "",
     contactEmail: "",
@@ -30,43 +32,49 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
     isAnonymous: false,
   });
 
-  const handleSubmit = () => {
-    if (!form.itemName || !form.location || !form.reportedBy) {
-      toast.error("Please fill in required fields (Item Name, Location, Reported By).");
+  const handleSubmit = async () => {
+    if (!form.itemName || !form.location || !form.locationCoordinates || !form.reportedBy) {
+      toast.error("Please fill in required fields (Item Name, Location, Pin, Reported By).");
       return;
     }
 
-    addItem(
-      {
-        itemName: form.itemName,
-        description: form.description,
-        category: form.category,
-        location: form.location,
-        dateLost: form.dateLost,
-        reportedBy: form.reportedBy,
-        contactEmail: form.contactEmail,
-      },
-      {
-        status: form.status,
-        foundBy: form.foundBy,
-        isAnonymous: form.isAnonymous,
-      }
-    );
+    try {
+      await addItem(
+        {
+          itemName: form.itemName,
+          description: form.description,
+          category: form.category,
+          location: form.location,
+          locationCoordinates: form.locationCoordinates,
+          dateLost: form.dateLost,
+          reportedBy: form.reportedBy,
+          contactEmail: form.contactEmail,
+        },
+        {
+          status: form.status,
+          foundBy: form.foundBy,
+          isAnonymous: form.isAnonymous,
+        }
+      );
 
-    toast.success(`Walk-in report added as "${form.status}".`);
-    onClose();
-    setForm({
-      itemName: "",
-      description: "",
-      category: "other",
-      location: "",
-      dateLost: new Date().toISOString().split("T")[0],
-      reportedBy: "",
-      contactEmail: "",
-      status: "missing",
-      foundBy: "",
-      isAnonymous: false,
-    });
+      toast.success(`Walk-in report added as "${form.status}".`);
+      onClose();
+      setForm({
+        itemName: "",
+        description: "",
+        category: "other",
+        location: "",
+        locationCoordinates: undefined,
+        dateLost: new Date().toISOString().split("T")[0],
+        reportedBy: "",
+        contactEmail: "",
+        status: "missing",
+        foundBy: "",
+        isAnonymous: false,
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add report.");
+    }
   };
 
   return (
@@ -108,6 +116,17 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           <div className="space-y-1">
             <Label>Location *</Label>
             <Input value={form.location} onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))} placeholder="Where it was lost/found" />
+          </div>
+          <div className="space-y-1">
+            <Label>Pin Exact Location *</Label>
+            <LocationPickerMap
+              value={form.locationCoordinates}
+              onChange={(coords) => setForm((p) => ({ ...p, locationCoordinates: coords }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Click on the map to set the exact spot.
+              {form.locationCoordinates ? ` Selected: ${form.locationCoordinates.lat}, ${form.locationCoordinates.lng}` : ""}
+            </p>
           </div>
           <div className="space-y-1">
             <Label>Date Lost</Label>

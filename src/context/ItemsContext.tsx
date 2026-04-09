@@ -1,141 +1,133 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { LostItem, ItemStatus, ActivityLog } from "@/types";
+import React, { createContext, useContext, useEffect, useCallback, useState } from "react";
+import { LostItem, ItemStatus } from "@/types";
+import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 
 interface ItemsContextType {
   items: LostItem[];
-  addItem: (item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">, options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }) => void;
-  updateItem: (id: string, updates: Partial<LostItem>, actionBy?: string) => void;
-  updateStatus: (id: string, status: ItemStatus, foundBy?: string, isAnonymous?: boolean) => void;
-  approveItem: (id: string) => void;
-  rejectItem: (id: string, reason?: string) => void;
-  deleteItem: (id: string) => void;
+  addItem: (
+    item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">,
+    options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }
+  ) => Promise<void>;
+  updateItem: (id: string, updates: Partial<LostItem>) => Promise<void>;
+  updateStatus: (id: string, status: ItemStatus, foundBy?: string, isAnonymous?: boolean) => Promise<void>;
+  approveItem: (id: string) => Promise<void>;
+  rejectItem: (id: string, reason?: string) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
   getItem: (id: string) => LostItem | undefined;
   stats: { total: number; pending: number; missing: number; found: number; surrendered: number };
 }
 
 const ItemsContext = createContext<ItemsContextType | undefined>(undefined);
 
-const generateRefId = () => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "LF-";
-  for (let i = 0; i < 6; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-  return result;
-};
-
-const STORAGE_KEY = "lost-found-items";
-
-const SAMPLE_ITEMS: LostItem[] = [
-  {
-    id: "1", refId: "LF-A1B2C3", itemName: "Blue Backpack", description: "Navy blue Jansport backpack with keychain attached", category: "bags", location: "Library - 2nd Floor", dateLost: "2026-04-01", dateReported: "2026-04-02", reportedBy: "Maria Santos", contactEmail: "maria@school.edu", status: "missing",
-    activityLog: [{ id: "a1", date: "2026-04-02", action: "Item reported as missing", by: "Maria Santos" }],
-  },
-  {
-    id: "2", refId: "LF-D4E5F6", itemName: "iPhone 15 (Black)", description: "Black iPhone 15 with clear case, cracked screen protector", category: "electronics", location: "Cafeteria", dateLost: "2026-03-28", dateReported: "2026-03-28", reportedBy: "Juan Dela Cruz", contactEmail: "juan@school.edu", status: "found", foundBy: "Guard - Main Gate", dateResolved: "2026-04-03",
-    activityLog: [
-      { id: "a2", date: "2026-03-28", action: "Item reported as missing", by: "Juan Dela Cruz" },
-      { id: "a3", date: "2026-04-03", action: "Item found and returned", by: "Admin" },
-    ],
-  },
-  {
-    id: "3", refId: "LF-G7H8I9", itemName: "Scientific Calculator", description: "Casio FX-991ES Plus, has sticker on the back", category: "electronics", location: "Room 301 - Math Lab", dateLost: "2026-04-04", dateReported: "2026-04-04", reportedBy: "Ana Reyes", contactEmail: "ana@school.edu", status: "surrendered", foundBy: "Anonymous", isFoundByAnonymous: true, dateResolved: "2026-04-05",
-    activityLog: [
-      { id: "a4", date: "2026-04-04", action: "Item reported as missing", by: "Ana Reyes" },
-      { id: "a5", date: "2026-04-05", action: "Item surrendered by someone (anonymous)", by: "Admin" },
-    ],
-  },
-];
-
 export function ItemsProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<LostItem[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : SAMPLE_ITEMS;
-  });
+  const { token, isAdmin } = useAuth();
+  const [items, setItems] = useState<LostItem[]>([]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
-
-  const addItem = useCallback((item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">, options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }) => {
-    const status = options?.status || "pending";
-    const isWalkIn = status !== "pending";
-    const actionMap: Record<string, string> = {
-      pending: "Report submitted — awaiting admin approval",
-      missing: "Walk-in report added by admin — item marked as missing",
-      found: "Walk-in report added by admin — item marked as found",
-      surrendered: `Walk-in report added by admin — item surrendered by ${options?.isAnonymous ? "someone (anonymous)" : options?.foundBy || "unknown"}`,
+    const load = async () => {
+      try {
+        const data = await apiRequest<LostItem[]>("/api/items");
+        setItems(data);
+      } catch {
+        setItems([]);
+      }
     };
-    const newItem: LostItem = {
-      ...item,
-      id: crypto.randomUUID(),
-      refId: generateRefId(),
-      dateReported: new Date().toISOString().split("T")[0],
-      status,
-      foundBy: options?.isAnonymous ? "Anonymous" : options?.foundBy,
-      isFoundByAnonymous: options?.isAnonymous,
-      dateResolved: (status === "found" || status === "surrendered") ? new Date().toISOString().split("T")[0] : undefined,
-      activityLog: [{ id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: actionMap[status] || "Item added", by: isWalkIn ? "Admin" : item.reportedBy }],
-    };
-    setItems((prev) => [newItem, ...prev]);
+    void load();
   }, []);
 
-  const updateItem = useCallback((id: string, updates: Partial<LostItem>, actionBy = "Admin") => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: `Item details updated`, by: actionBy };
-        return { ...item, ...updates, activityLog: [...item.activityLog, log] };
-      })
-    );
+  const refresh = useCallback(async () => {
+    const data = await apiRequest<LostItem[]>("/api/items");
+    setItems(data);
   }, []);
 
-  const updateStatus = useCallback((id: string, status: ItemStatus, foundBy?: string, isAnonymous?: boolean) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const actionMap: Record<ItemStatus, string> = {
-          pending: "Item set back to pending",
-          missing: "Item marked as missing again",
-          found: `Item found and returned`,
-          surrendered: `Item surrendered by ${isAnonymous ? "someone (anonymous)" : foundBy || "unknown"}`,
-          rejected: "Item report was rejected",
-        };
-        const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: actionMap[status], by: "Admin" };
-        return {
-          ...item,
-          status,
-          foundBy: isAnonymous ? "Anonymous" : foundBy,
-          isFoundByAnonymous: isAnonymous,
-          dateResolved: status !== "missing" ? new Date().toISOString().split("T")[0] : undefined,
-          activityLog: [...item.activityLog, log],
-        };
-      })
-    );
-  }, []);
+  const addItem = useCallback(
+    async (
+      item: Omit<LostItem, "id" | "refId" | "dateReported" | "status" | "activityLog">,
+      options?: { status?: ItemStatus; foundBy?: string; isAnonymous?: boolean }
+    ) => {
+      if (!token) throw new Error("Please sign in first.");
 
-  const approveItem = useCallback((id: string) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: "Report approved by admin", by: "Admin" };
-        return { ...item, status: "missing" as ItemStatus, activityLog: [...item.activityLog, log] };
-      })
-    );
-  }, []);
+      const created = await apiRequest<LostItem>("/api/items", {
+        method: "POST",
+        body: JSON.stringify(item),
+        token,
+      });
 
-  const rejectItem = useCallback((id: string, reason?: string) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const log: ActivityLog = { id: crypto.randomUUID(), date: new Date().toISOString().split("T")[0], action: `Report rejected by admin${reason ? ": " + reason : ""}`, by: "Admin" };
-        return { ...item, status: "rejected" as any, activityLog: [...item.activityLog, log] };
-      })
-    );
-  }, []);
+      // Walk-in reports (admin-only) may immediately set a non-pending status
+      const desiredStatus = options?.status;
+      if (desiredStatus && desiredStatus !== "pending") {
+        if (!isAdmin) throw new Error("Admin access required for walk-in reports.");
 
-  const deleteItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  }, []);
+        await apiRequest<LostItem>(`/api/admin/items/${created.id}/status`, {
+          method: "PUT",
+          body: JSON.stringify({
+            status: desiredStatus,
+            foundBy: options?.foundBy,
+            isAnonymous: options?.isAnonymous,
+          }),
+          token,
+        });
+      }
+
+      await refresh();
+    },
+    [token, isAdmin, refresh]
+  );
+
+  const updateItem = useCallback(
+    async (id: string, updates: Partial<LostItem>) => {
+      if (!token) throw new Error("Please sign in first.");
+      await apiRequest<LostItem>(`/api/items/${id}`, { method: "PUT", body: JSON.stringify(updates), token });
+      await refresh();
+    },
+    [token, refresh]
+  );
+
+  const updateStatus = useCallback(
+    async (id: string, status: ItemStatus, foundBy?: string, isAnonymous?: boolean) => {
+      if (!token) throw new Error("Please sign in first.");
+      if (!isAdmin) throw new Error("Admin access required.");
+      await apiRequest<LostItem>(`/api/admin/items/${id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status, foundBy, isAnonymous }),
+        token,
+      });
+      await refresh();
+    },
+    [token, isAdmin, refresh]
+  );
+
+  const approveItem = useCallback(
+    async (id: string) => {
+      await updateStatus(id, "missing");
+    },
+    [updateStatus]
+  );
+
+  const rejectItem = useCallback(
+    async (id: string, reason?: string) => {
+      if (!token) throw new Error("Please sign in first.");
+      if (!isAdmin) throw new Error("Admin access required.");
+      await apiRequest<LostItem>(`/api/admin/items/${id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status: "rejected", reason }),
+        token,
+      });
+      await refresh();
+    },
+    [token, isAdmin, refresh]
+  );
+
+  const deleteItem = useCallback(
+    async (id: string) => {
+      if (!token) throw new Error("Please sign in first.");
+      await apiRequest<{ message: string }>(`/api/items/${id}`, { method: "DELETE", token });
+      await refresh();
+    },
+    [token, refresh]
+  );
 
   const getItem = useCallback((id: string) => items.find((item) => item.id === id), [items]);
 

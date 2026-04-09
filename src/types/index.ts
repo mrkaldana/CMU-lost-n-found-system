@@ -9,6 +9,11 @@ export interface ActivityLog {
   by: string;
 }
 
+export interface ItemCoordinates {
+  lat: number;
+  lng: number;
+}
+
 export interface LostItem {
   id: string;
   refId: string;
@@ -16,6 +21,7 @@ export interface LostItem {
   description: string;
   category: ItemCategory;
   location: string;
+  locationCoordinates?: ItemCoordinates;
   dateLost: string;
   dateReported: string;
   reportedBy: string;

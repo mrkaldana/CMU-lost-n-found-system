@@ -30,13 +30,13 @@ const Index = () => {
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
       {/* Hero */}
-      <section className="bg-primary text-primary-foreground py-12">
+      <section className="bg-primary py-10 text-primary-foreground sm:py-12">
         <div className="container text-center space-y-4">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Lost Something?</h1>
           <p className="text-primary-foreground/80 max-w-md mx-auto">
             Search through reported items or file a new report. We'll help you find it.
           </p>
-          <Button size="lg" variant="secondary" asChild>
+          <Button size="lg" variant="secondary" className="w-full sm:w-auto" asChild>
             <Link to="/report">
               <Plus className="h-4 w-4 mr-2" /> Report Lost Item
             </Link>
@@ -45,7 +45,7 @@ const Index = () => {
       </section>
 
       {/* Filters */}
-      <div className="container py-6 space-y-4">
+      <div className="container space-y-4 py-4 sm:py-6">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

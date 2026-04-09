@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CoordinateMapHover } from "@/components/CoordinateMapHover";
 import { toast } from "sonner";
 import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft, CheckCircle, XCircle, Plus } from "lucide-react";
 import { WalkInDialog } from "@/components/WalkInDialog";
@@ -19,10 +21,14 @@ function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; on
   const { updateItem } = useItems();
   const [form, setForm] = useState({ itemName: item.itemName, description: item.description, category: item.category, location: item.location });
 
-  const handleSave = () => {
-    updateItem(item.id, form);
-    toast.success("Item updated.");
-    onClose();
+  const handleSave = async () => {
+    try {
+      await updateItem(item.id, form);
+      toast.success("Item updated.");
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update item.");
+    }
   };
 
   return (
@@ -68,10 +74,14 @@ function StatusDialog({ item, open, onClose }: { item: LostItem; open: boolean; 
   const [foundBy, setFoundBy] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-  const handleSave = () => {
-    updateStatus(item.id, status, foundBy, isAnonymous);
-    toast.success(`Status updated to "${status}".`);
-    onClose();
+  const handleSave = async () => {
+    try {
+      await updateStatus(item.id, status, foundBy, isAnonymous);
+      toast.success(`Status updated to "${status}".`);
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update status.");
+    }
   };
 
   return (
@@ -161,28 +171,68 @@ const AdminItems = () => {
     return matchSearch && matchStatus;
   });
 
-  const handleDelete = (item: LostItem) => {
-    if (confirm(`Delete "${item.itemName}" (${item.refId})?`)) {
-      deleteItem(item.id);
+  const handleDelete = async (item: LostItem) => {
+    if (!confirm(`Delete "${item.itemName}" (${item.refId})?`)) return;
+    try {
+      await deleteItem(item.id);
       toast.success("Item deleted.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete item.");
     }
   };
 
-  const handleApprove = (item: LostItem) => {
-    approveItem(item.id);
-    toast.success(`Report "${item.itemName}" approved.`);
+  const handleApprove = async (item: LostItem) => {
+    try {
+      await approveItem(item.id);
+      toast.success(`Report "${item.itemName}" approved.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to approve report.");
+    }
   };
 
-  const handleReject = (item: LostItem) => {
-    if (confirm(`Reject report "${item.itemName}" (${item.refId})?`)) {
-      rejectItem(item.id);
+  const handleReject = async (item: LostItem) => {
+    if (!confirm(`Reject report "${item.itemName}" (${item.refId})?`)) return;
+    try {
+      await rejectItem(item.id);
       toast.success(`Report "${item.itemName}" rejected.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to reject report.");
     }
   };
+
+  const renderActionButtons = (item: LostItem) => (
+    <div className="flex flex-wrap justify-end gap-1">
+      {item.status === "pending" ? (
+        <>
+          <Button variant="ghost" size="icon" onClick={() => handleApprove(item)} title="Approve" className="text-status-found hover:text-status-found">
+            <CheckCircle className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => handleReject(item)} title="Reject" className="text-destructive hover:text-destructive">
+            <XCircle className="h-3.5 w-3.5" />
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button variant="ghost" size="icon" onClick={() => setEditItem(item)} title="Edit">
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setStatusItem(item)} title="Update Status">
+            <ArrowRightLeft className="h-3.5 w-3.5" />
+          </Button>
+        </>
+      )}
+      <Button variant="ghost" size="icon" onClick={() => setActivityItem(item)} title="Activity Log">
+        <Clock className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={() => handleDelete(item)} title="Delete" className="text-destructive hover:text-destructive">
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
 
   return (
-    <div className="container py-8 space-y-4">
-      <div className="flex items-center gap-3">
+    <div className="container space-y-4 py-4 sm:py-8">
+      <div className="flex flex-wrap items-start gap-3 sm:items-center">
         <Button variant="ghost" size="icon" asChild>
           <Link to="/admin"><ChevronLeft className="h-4 w-4" /></Link>
         </Button>
@@ -190,7 +240,7 @@ const AdminItems = () => {
           <h1 className="text-2xl font-bold text-foreground">Manage Items</h1>
           <p className="text-muted-foreground text-sm">{items.length} total reports</p>
         </div>
-        <Button onClick={() => setWalkInOpen(true)} className="gap-1.5">
+        <Button onClick={() => setWalkInOpen(true)} className="w-full gap-1.5 sm:w-auto">
           <Plus className="h-4 w-4" /> Walk-in Report
         </Button>
       </div>
@@ -215,60 +265,117 @@ const AdminItems = () => {
         </Select>
       </div>
 
-      <div className="rounded-lg border overflow-x-auto">
-        <Table>
+      <div className="space-y-3 md:hidden">
+        {filtered.map((item) => (
+          <div key={item.id} className="rounded-lg border bg-card p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-card-foreground break-words">{item.itemName}</p>
+                <p className="font-mono text-xs text-muted-foreground">{item.refId}</p>
+                <p className="text-xs text-muted-foreground">{item.dateReported}</p>
+              </div>
+              <StatusBadge status={item.status} />
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  alt={item.itemName}
+                  className="h-12 w-12 rounded-md border object-cover shrink-0"
+                />
+              ) : (
+                <div className="h-12 w-12 rounded-md border bg-muted shrink-0" />
+              )}
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground truncate">Reported by {item.reportedBy}</p>
+                <p className="text-xs text-muted-foreground truncate">{item.location}</p>
+                {item.locationCoordinates && (
+                  <CoordinateMapHover
+                    lat={item.locationCoordinates.lat}
+                    lng={item.locationCoordinates.lng}
+                    className="font-mono text-[11px] underline underline-offset-2 decoration-dotted"
+                  />
+                )}
+              </div>
+            </div>
+            <div className="mt-2 border-t pt-2">
+              {renderActionButtons(item)}
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="rounded-lg border py-8 text-center text-muted-foreground">No items found.</div>
+        )}
+      </div>
+
+      <div className="hidden rounded-lg border overflow-x-auto md:block">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
-              <TableHead>Ref ID</TableHead>
-              <TableHead>Item</TableHead>
-              <TableHead className="hidden md:table-cell">Reported By</TableHead>
-              <TableHead className="hidden sm:table-cell">Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-center">Ref ID</TableHead>
+              <TableHead className="text-center">Item</TableHead>
+              <TableHead className="hidden md:table-cell text-center">Reported By</TableHead>
+              <TableHead className="hidden lg:table-cell text-center">Coordinates</TableHead>
+              <TableHead className="hidden sm:table-cell text-center">Date</TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-mono text-xs">{item.refId}</TableCell>
-                <TableCell className="font-medium">{item.itemName}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{item.reportedBy}</TableCell>
-                <TableCell className="hidden sm:table-cell text-muted-foreground">{item.dateReported}</TableCell>
-                <TableCell><StatusBadge status={item.status} /></TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    {item.status === "pending" ? (
-                      <>
-                        <Button variant="ghost" size="icon" onClick={() => handleApprove(item)} title="Approve" className="text-status-found hover:text-status-found">
-                          <CheckCircle className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleReject(item)} title="Reject" className="text-destructive hover:text-destructive">
-                          <XCircle className="h-3.5 w-3.5" />
-                        </Button>
-                      </>
+                <TableCell className="font-mono text-xs text-center align-middle">{item.refId}</TableCell>
+                <TableCell className="align-middle">
+                  <div className="flex items-center justify-center gap-3 min-w-0">
+                    {item.imageUrl ? (
+                      <HoverCard openDelay={120}>
+                        <HoverCardTrigger asChild>
+                          <img
+                            src={item.imageUrl}
+                            alt={item.itemName}
+                            className="h-10 w-10 rounded-md border object-cover shrink-0 cursor-zoom-in"
+                          />
+                        </HoverCardTrigger>
+                        <HoverCardContent
+                          sideOffset={8}
+                          collisionPadding={12}
+                          className="w-auto max-w-[calc(100vw-24px)] p-2"
+                        >
+                          <img
+                            src={item.imageUrl}
+                            alt={`${item.itemName} full preview`}
+                            className="h-auto max-h-[calc(100vh-24px)] w-auto max-w-[min(560px,calc(100vw-40px))] rounded-md object-contain"
+                          />
+                        </HoverCardContent>
+                      </HoverCard>
                     ) : (
-                      <>
-                        <Button variant="ghost" size="icon" onClick={() => setEditItem(item)} title="Edit">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setStatusItem(item)} title="Update Status">
-                          <ArrowRightLeft className="h-3.5 w-3.5" />
-                        </Button>
-                      </>
+                      <div className="h-10 w-10 rounded-md border bg-muted shrink-0" />
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => setActivityItem(item)} title="Activity Log">
-                      <Clock className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item)} title="Delete" className="text-destructive hover:text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <p className="font-medium truncate max-w-[220px]">{item.itemName}</p>
                   </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground text-center align-middle">{item.reportedBy}</TableCell>
+                <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs text-center align-middle">
+                  {item.locationCoordinates
+                    ? (
+                      <CoordinateMapHover
+                        lat={item.locationCoordinates.lat}
+                        lng={item.locationCoordinates.lng}
+                        className="font-mono text-xs underline underline-offset-2 decoration-dotted"
+                      />
+                    )
+                    : "N/A"}
+                </TableCell>
+                <TableCell className="hidden sm:table-cell text-muted-foreground text-center align-middle">{item.dateReported}</TableCell>
+                <TableCell className="text-center align-middle"><StatusBadge status={item.status} /></TableCell>
+                <TableCell className="text-center align-middle">
+                  {renderActionButtons(item)}
                 </TableCell>
               </TableRow>
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No items found.</TableCell>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No items found.</TableCell>
               </TableRow>
             )}
           </TableBody>

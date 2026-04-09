@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Package, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +18,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirm) {
       toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
@@ -27,7 +28,7 @@ const Register = () => {
       toast({ title: "Error", description: "Password must be at least 6 characters.", variant: "destructive" });
       return;
     }
-    if (register(name, email, password)) {
+    if (await register(name, email, password)) {
       toast({ title: "Account created!", description: "Welcome to FindIt." });
       navigate("/");
     } else {
@@ -57,11 +58,11 @@ const Register = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Min. 6 characters" value={password} onChange={e => setPassword(e.target.value)} required />
+              <PasswordInput id="password" placeholder="Min. 6 characters" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm">Confirm Password</Label>
-              <Input id="confirm" type="password" placeholder="••••••••" value={confirm} onChange={e => setConfirm(e.target.value)} required />
+              <PasswordInput id="confirm" placeholder="••••••••" value={confirm} onChange={e => setConfirm(e.target.value)} required />
             </div>
             <Button type="submit" className="w-full">
               <UserPlus className="h-4 w-4 mr-2" /> Register

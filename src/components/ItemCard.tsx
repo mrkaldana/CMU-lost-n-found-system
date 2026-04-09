@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { StatusBadge } from "@/components/StatusBadge";
+import { CoordinateMapHover } from "@/components/CoordinateMapHover";
 import { LostItem, CATEGORIES } from "@/types";
 import { MapPin, Calendar, Tag } from "lucide-react";
 
@@ -16,11 +18,41 @@ export function ItemCard({ item }: { item: LostItem }) {
         <StatusBadge status={item.status} />
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
+        {item.imageUrl && (
+          <HoverCard openDelay={120}>
+            <HoverCardTrigger asChild>
+              <img
+                src={item.imageUrl}
+                alt={item.itemName}
+                className="h-36 w-full rounded-md border object-cover cursor-zoom-in"
+              />
+            </HoverCardTrigger>
+            <HoverCardContent
+              sideOffset={8}
+              collisionPadding={12}
+              className="w-auto max-w-[calc(100vw-24px)] p-2"
+            >
+              <img
+                src={item.imageUrl}
+                alt={`${item.itemName} full preview`}
+                className="h-auto max-h-[calc(100vh-24px)] w-auto max-w-[min(560px,calc(100vw-40px))] rounded-md object-contain"
+              />
+            </HoverCardContent>
+          </HoverCard>
+        )}
         <p className="text-muted-foreground line-clamp-2">{item.description}</p>
         <div className="flex flex-wrap gap-3 text-muted-foreground text-xs">
           <span className="flex items-center gap-1">
             <MapPin className="h-3 w-3" /> {item.location}
           </span>
+          {item.locationCoordinates && (
+            <CoordinateMapHover
+              lat={item.locationCoordinates.lat}
+              lng={item.locationCoordinates.lng}
+              triggerText="View map"
+              className="underline underline-offset-2 decoration-dotted"
+            />
+          )}
           <span className="flex items-center gap-1">
             <Calendar className="h-3 w-3" /> {item.dateLost}
           </span>
