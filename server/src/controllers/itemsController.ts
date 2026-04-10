@@ -15,6 +15,14 @@ function generateRefId() {
 }
 
 function parseCoordinates(coords: unknown) {
+  if (typeof coords === "string") {
+    try {
+      const parsed = JSON.parse(coords) as unknown;
+      return parseCoordinates(parsed);
+    } catch {
+      return undefined;
+    }
+  }
   if (!coords || typeof coords !== "object") return undefined;
   const source = coords as { lat?: unknown; lng?: unknown };
   if (typeof source.lat !== "number" || typeof source.lng !== "number") return undefined;
@@ -74,6 +82,7 @@ export async function createItem(req: Request, res: Response) {
     contactEmail?: string;
     status?: "missing" | "found" | "surrendered";
   }>;
+  const uploadedImageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
 
   const title = (body.title || body.itemName || "").trim();
   if (!title || !body.description || !body.category || !body.location || !body.dateLost) {
@@ -121,7 +130,7 @@ export async function createItem(req: Request, res: Response) {
     reportedBy: req.user.id,
     reportedByName: body.reportedBy || req.user.name,
     contactEmail: (body.contactEmail || req.user.email).toLowerCase(),
-    imageUrl: body.imageUrl,
+    imageUrl: uploadedImageUrl || body.imageUrl,
     activityLog
   });
 
@@ -152,6 +161,7 @@ export async function updateItem(req: Request, res: Response) {
     reportedBy?: string;
     contactEmail?: string;
   }>;
+  const uploadedImageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
 
   if (typeof updates.title === "string" || typeof updates.itemName === "string") {
     const nextTitle = (updates.title || updates.itemName || "").trim();
@@ -166,6 +176,7 @@ export async function updateItem(req: Request, res: Response) {
   }
   if (typeof updates.dateLost === "string") item.dateLost = updates.dateLost;
   if (typeof updates.imageUrl === "string") item.imageUrl = updates.imageUrl;
+  if (uploadedImageUrl) item.imageUrl = uploadedImageUrl;
 
   if (typeof updates.reportedBy === "string" && updates.reportedBy.trim()) item.reportedByName = updates.reportedBy.trim();
   if (typeof updates.contactEmail === "string" && updates.contactEmail.trim()) item.contactEmail = updates.contactEmail.trim().toLowerCase();

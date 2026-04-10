@@ -9,13 +9,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { ImageHoverPreview } from "@/components/ImageHoverPreview";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CoordinateMapHover } from "@/components/CoordinateMapHover";
 import { toast } from "sonner";
 import { Pencil, ArrowRightLeft, Trash2, Search, Clock, ChevronLeft, CheckCircle, XCircle, Plus } from "lucide-react";
 import { WalkInDialog } from "@/components/WalkInDialog";
 import { Link } from "react-router-dom";
+import { resolveImageUrl } from "@/lib/media";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -27,6 +28,8 @@ function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; on
     category: item.category,
     location: item.location,
     imageUrl: item.imageUrl || "",
+    imagePreviewUrl: item.imageUrl ? resolveImageUrl(item.imageUrl) : "",
+    imageFile: undefined as File | undefined,
   });
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -45,20 +48,20 @@ function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; on
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : "";
-      setForm((prev) => ({ ...prev, imageUrl: result }));
-    };
-    reader.onerror = () => {
-      toast.error("Failed to read the selected image.");
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setForm((prev) => ({ ...prev, imagePreviewUrl: objectUrl, imageFile: file }));
   };
 
   const handleSave = async () => {
     try {
-      await updateItem(item.id, form);
+      await updateItem(item.id, {
+        itemName: form.itemName,
+        description: form.description,
+        category: form.category,
+        location: form.location,
+        imageUrl: form.imageUrl,
+        imageFile: form.imageFile,
+      });
       toast.success("Item updated.");
       onClose();
     } catch (err) {
@@ -85,9 +88,9 @@ function EditDialog({ item, open, onClose }: { item: LostItem; open: boolean; on
           <div className="space-y-1">
             <Label htmlFor="edit-item-image">Item Image</Label>
             <Input id="edit-item-image" type="file" accept="image/*" onChange={handleImageChange} />
-            {form.imageUrl && (
+            {form.imagePreviewUrl && (
               <img
-                src={form.imageUrl}
+                src={form.imagePreviewUrl}
                 alt="Item preview"
                 className="h-36 w-full max-w-xs rounded-md border object-cover"
               />
@@ -324,13 +327,15 @@ const AdminItems = () => {
             </div>
             <div className="mt-3 flex items-center gap-3">
               {item.imageUrl ? (
-                <img
-                  src={item.imageUrl}
-                  alt={item.itemName}
-                  className="h-12 w-12 rounded-md border object-cover shrink-0"
-                />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
+                  <img
+                    src={resolveImageUrl(item.imageUrl)}
+                    alt={item.itemName}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
               ) : (
-                <div className="h-12 w-12 rounded-md border bg-muted shrink-0" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border bg-muted" />
               )}
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground truncate">Reported by {item.reportedBy}</p>
@@ -372,32 +377,17 @@ const AdminItems = () => {
               <TableRow key={item.id}>
                 <TableCell className="font-mono text-xs text-center align-middle">{item.refId}</TableCell>
                 <TableCell className="align-middle">
-                  <div className="flex items-center justify-center gap-3 min-w-0">
+                  <div className="mx-auto grid w-full max-w-[280px] grid-cols-[2.5rem,minmax(0,1fr)] items-center gap-3">
                     {item.imageUrl ? (
-                      <HoverCard openDelay={120}>
-                        <HoverCardTrigger asChild>
-                          <img
-                            src={item.imageUrl}
-                            alt={item.itemName}
-                            className="h-10 w-10 rounded-md border object-cover shrink-0 cursor-zoom-in"
-                          />
-                        </HoverCardTrigger>
-                        <HoverCardContent
-                          sideOffset={8}
-                          collisionPadding={12}
-                          className="flex h-[min(420px,calc(100vh-40px))] w-[min(560px,calc(100vw-40px))] items-center justify-center p-2"
-                        >
-                          <img
-                            src={item.imageUrl}
-                            alt={`${item.itemName} full preview`}
-                            className="h-full w-full rounded-md object-contain"
-                          />
-                        </HoverCardContent>
-                      </HoverCard>
+                      <ImageHoverPreview
+                        src={resolveImageUrl(item.imageUrl)}
+                        alt={item.itemName}
+                        triggerClassName="h-10 w-10 shrink-0 cursor-zoom-in rounded-md border bg-muted object-cover"
+                      />
                     ) : (
-                      <div className="h-10 w-10 rounded-md border bg-muted shrink-0" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted" />
                     )}
-                    <p className="font-medium truncate max-w-[220px]">{item.itemName}</p>
+                    <p className="min-w-0 font-medium truncate">{item.itemName}</p>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground text-center align-middle">{item.reportedBy}</TableCell>

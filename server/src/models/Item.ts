@@ -40,6 +40,10 @@ const itemSchema = new Schema(
   { timestamps: true }
 );
 
+itemSchema.index({ status: 1, category: 1, dateReported: -1 });
+itemSchema.index({ reportedBy: 1, dateReported: -1 });
+itemSchema.index({ createdAt: -1 });
+
 export type ItemDoc = InferSchemaType<typeof itemSchema> & { _id: mongoose.Types.ObjectId };
 
 export const Item = mongoose.models.Item || mongoose.model("Item", itemSchema);

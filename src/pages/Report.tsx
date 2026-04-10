@@ -29,7 +29,8 @@ const Report = () => {
     dateLost: "",
     reportedBy: "",
     contactEmail: "",
-    imageUrl: "",
+    imagePreviewUrl: "",
+    imageFile: undefined as File | undefined,
   });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,15 +49,8 @@ const Report = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : "";
-      setForm((prev) => ({ ...prev, imageUrl: result }));
-    };
-    reader.onerror = () => {
-      toast.error("Failed to read the selected image.");
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setForm((prev) => ({ ...prev, imagePreviewUrl: objectUrl, imageFile: file }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +69,7 @@ const Report = () => {
         dateLost: form.dateLost,
         reportedBy: form.reportedBy,
         contactEmail: form.contactEmail,
-        imageUrl: form.imageUrl || undefined,
+        imageFile: form.imageFile,
       }, {
         initialStatus: form.reportType,
       });
@@ -141,9 +135,9 @@ const Report = () => {
             <div className="space-y-2">
               <Label htmlFor="itemImage">Item Image</Label>
               <Input id="itemImage" type="file" accept="image/*" onChange={handleImageChange} />
-              {form.imageUrl && (
+              {form.imagePreviewUrl && (
                 <img
-                  src={form.imageUrl}
+                  src={form.imagePreviewUrl}
                   alt="Item preview"
                   className="h-36 w-full max-w-xs rounded-md border object-cover"
                 />

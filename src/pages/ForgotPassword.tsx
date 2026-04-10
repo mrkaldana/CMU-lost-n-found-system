@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
-import { Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ForgotPassword = () => {
@@ -18,6 +17,7 @@ const ForgotPassword = () => {
   const [otpVerified, setOtpVerified] = useState(false);
   const { requestPasswordResetOtp, verifyPasswordResetOtp, resetPasswordWithOtp } = useAuth();
   const { toast } = useToast();
+  const cmuEmailPattern = /^2022\d{5}@cityofmalabonuniversity\.edu\.ph$/i;
 
   const handleOtpChange = (value: string) => {
     const digitsOnly = value.replace(/\D/g, "").slice(0, 6);
@@ -26,8 +26,18 @@ const ForgotPassword = () => {
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const ok = await requestPasswordResetOtp(email);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!cmuEmailPattern.test(normalizedEmail)) {
+      toast({
+        title: "Invalid CMU email",
+        description: "Use format: 2022xxxxx@cityofmalabonuniversity.edu.ph",
+        variant: "destructive"
+      });
+      return;
+    }
+    const ok = await requestPasswordResetOtp(normalizedEmail);
     if (ok) {
+      setEmail(normalizedEmail);
       setSent(true);
       toast({ title: "OTP sent", description: "Check your email for the one-time password." });
     } else {
@@ -73,11 +83,13 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
+    <div className="relative min-h-screen flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-[url('/cover.jpg')] bg-cover bg-center" />
+      <div className="absolute inset-0 bg-background/55" />
+      <Card className="relative z-10 w-full max-w-md bg-card/95 shadow-xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">
-            <Package className="h-8 w-8 text-primary" />
+            <img src="/findit.png" alt="FindIt logo" className="h-24 w-auto object-contain" />
           </div>
           <CardTitle className="text-2xl">Forgot Password</CardTitle>
           <CardDescription>Send OTP to your registered email to reset your password</CardDescription>

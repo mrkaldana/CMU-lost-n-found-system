@@ -41,7 +41,8 @@ export async function apiRequest<T>(
   const url = `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
   const headers = new Headers(options.headers);
-  if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (!headers.has("Content-Type") && options.body && !isFormData) headers.set("Content-Type", "application/json");
   if (options.token) headers.set("Authorization", `Bearer ${options.token}`);
 
   const res = await fetch(url, { ...options, headers });

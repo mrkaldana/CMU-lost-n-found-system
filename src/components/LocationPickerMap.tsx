@@ -12,12 +12,18 @@ interface LocationPickerMapProps {
 }
 
 const DEFAULT_MAP_CENTER: [number, number] = [14.653776, 120.960153];
+const PIN_ICON = L.divIcon({
+  className: "",
+  html: '<span style="font-size: 28px; line-height: 1;">📍</span>',
+  iconSize: [28, 28],
+  iconAnchor: [14, 26],
+});
 
 export function LocationPickerMap({ value, onChange }: LocationPickerMapProps) {
   const center = useMemo<[number, number]>(() => (value ? [value.lat, value.lng] : DEFAULT_MAP_CENTER), [value]);
   const mapElementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.CircleMarker | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const onChangeRef = useRef(onChange);
 
   useEffect(() => {
@@ -70,12 +76,7 @@ export function LocationPickerMap({ value, onChange }: LocationPickerMapProps) {
 
     const latLng: L.LatLngExpression = [value.lat, value.lng];
     if (!markerRef.current) {
-      markerRef.current = L.circleMarker(latLng, {
-        radius: 8,
-        color: "#2563eb",
-        fillColor: "#2563eb",
-        fillOpacity: 0.75,
-      }).addTo(map);
+      markerRef.current = L.marker(latLng, { icon: PIN_ICON }).addTo(map);
       return;
     }
 

@@ -29,7 +29,8 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
     dateLost: new Date().toISOString().split("T")[0],
     reportedBy: "",
     contactEmail: "",
-    imageUrl: "",
+    imagePreviewUrl: "",
+    imageFile: undefined as File | undefined,
     status: "missing" as ItemStatus,
     foundBy: "",
     isAnonymous: false,
@@ -51,15 +52,8 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : "";
-      setForm((prev) => ({ ...prev, imageUrl: result }));
-    };
-    reader.onerror = () => {
-      toast.error("Failed to read the selected image.");
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setForm((prev) => ({ ...prev, imagePreviewUrl: objectUrl, imageFile: file }));
   };
 
   const handleSubmit = async () => {
@@ -79,7 +73,7 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           dateLost: form.dateLost,
           reportedBy: form.reportedBy,
           contactEmail: form.contactEmail,
-          imageUrl: form.imageUrl || undefined,
+          imageFile: form.imageFile,
         },
         {
           status: form.status,
@@ -99,7 +93,8 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
         dateLost: new Date().toISOString().split("T")[0],
         reportedBy: "",
         contactEmail: "",
-        imageUrl: "",
+        imagePreviewUrl: "",
+        imageFile: undefined,
         status: "missing",
         foundBy: "",
         isAnonymous: false,
@@ -128,9 +123,9 @@ export function WalkInDialog({ open, onClose }: WalkInDialogProps) {
           <div className="space-y-1">
             <Label htmlFor="walkin-item-image">Item Image</Label>
             <Input id="walkin-item-image" type="file" accept="image/*" onChange={handleImageChange} />
-            {form.imageUrl && (
+            {form.imagePreviewUrl && (
               <img
-                src={form.imageUrl}
+                src={form.imagePreviewUrl}
                 alt="Item preview"
                 className="h-36 w-full max-w-xs rounded-md border object-cover"
               />

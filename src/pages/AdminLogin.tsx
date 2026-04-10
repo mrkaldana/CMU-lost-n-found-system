@@ -27,11 +27,13 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
+    <div className="relative min-h-screen flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-[url('/cover.jpg')] bg-cover bg-center" />
+      <div className="absolute inset-0 bg-background/55" />
+      <Card className="relative z-10 w-full max-w-md bg-card/95 shadow-xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+            <img src="/findit.png" alt="FindIt logo" className="h-24 w-auto object-contain" />
           </div>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>Authorized personnel only</CardDescription>

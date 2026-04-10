@@ -3,7 +3,7 @@ import { useItems } from "@/context/ItemsContext";
 import { useAuth } from "@/context/AuthContext";
 import { apiRequest } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { ImageHoverPreview } from "@/components/ImageHoverPreview";
 import { CoordinateMapHover } from "@/components/CoordinateMapHover";
 import { Package, Search, CheckCircle, HandHeart, TrendingUp, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -22,6 +22,7 @@ import {
   type ChartOptions,
 } from "chart.js";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
+import { resolveImageUrl } from "@/lib/media";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, BarElement, Tooltip, Legend);
 
@@ -70,26 +71,11 @@ function RecentItem({ item }: { item: LostItem }) {
     <div className="flex items-center justify-between gap-3 py-2 border-b border-border/50 last:border-0">
       <div className="flex items-center gap-3 min-w-0">
         {item.imageUrl ? (
-          <HoverCard openDelay={120}>
-            <HoverCardTrigger asChild>
-              <img
-                src={item.imageUrl}
-                alt={item.itemName}
-                className="h-10 w-10 rounded-md border object-cover shrink-0 cursor-zoom-in"
-              />
-            </HoverCardTrigger>
-            <HoverCardContent
-              sideOffset={8}
-              collisionPadding={12}
-              className="flex h-[min(420px,calc(100vh-40px))] w-[min(560px,calc(100vw-40px))] items-center justify-center p-2"
-            >
-              <img
-                src={item.imageUrl}
-                alt={`${item.itemName} full preview`}
-                className="h-full w-full rounded-md object-contain"
-              />
-            </HoverCardContent>
-          </HoverCard>
+          <ImageHoverPreview
+            src={resolveImageUrl(item.imageUrl)}
+            alt={item.itemName}
+            triggerClassName="h-10 w-10 rounded-md border object-cover shrink-0 cursor-zoom-in"
+          />
         ) : (
           <div className="h-10 w-10 rounded-md border bg-muted shrink-0" />
         )}

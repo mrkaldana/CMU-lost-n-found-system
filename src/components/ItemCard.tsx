@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { ImageHoverPreview } from "@/components/ImageHoverPreview";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CoordinateMapHover } from "@/components/CoordinateMapHover";
 import { LostItem, CATEGORIES } from "@/types";
 import { MapPin, Calendar, Tag } from "lucide-react";
+import { resolveImageUrl } from "@/lib/media";
 
 export function ItemCard({ item }: { item: LostItem }) {
   const category = CATEGORIES.find((c) => c.value === item.category);
@@ -19,26 +20,11 @@ export function ItemCard({ item }: { item: LostItem }) {
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         {item.imageUrl && (
-          <HoverCard openDelay={120}>
-            <HoverCardTrigger asChild>
-              <img
-                src={item.imageUrl}
-                alt={item.itemName}
-                className="h-36 w-full rounded-md border object-cover cursor-zoom-in"
-              />
-            </HoverCardTrigger>
-            <HoverCardContent
-              sideOffset={8}
-              collisionPadding={12}
-              className="flex h-[min(420px,calc(100vh-40px))] w-[min(560px,calc(100vw-40px))] items-center justify-center p-2"
-            >
-              <img
-                src={item.imageUrl}
-                alt={`${item.itemName} full preview`}
-                className="h-full w-full rounded-md object-contain"
-              />
-            </HoverCardContent>
-          </HoverCard>
+          <ImageHoverPreview
+            src={resolveImageUrl(item.imageUrl)}
+            alt={item.itemName}
+            triggerClassName="h-36 w-full rounded-md border object-cover cursor-zoom-in"
+          />
         )}
         <p className="text-muted-foreground line-clamp-2">{item.description}</p>
         <div className="flex flex-wrap gap-3 text-muted-foreground text-xs">

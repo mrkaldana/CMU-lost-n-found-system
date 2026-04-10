@@ -4,6 +4,9 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import { User } from "../models/User";
+import { EmailOtp } from "../models/EmailOtp";
+
+const CMU_EMAIL_PATTERN = /^2022\d{5}@cityofmalabonuniversity\.edu\.ph$/i;
 
 function signToken(user: { id: string; role: "admin" | "user"; name: string; email: string }) {
   const secret = process.env.JWT_SECRET;
@@ -20,56 +23,102 @@ function hashOtp(otp: string) {
   return crypto.createHash("sha256").update(otp).digest("hex");
 }
 
-async function sendResetOtpEmail(toEmail: string, otp: string) {
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  if (!smtpUser || !smtpPass) throw new Error("SMTP_USER and SMTP_PASS are required for forgot password");
+async function sendResetOtpEmail(toEmail: string, otp: string, purpose: "forgotPassword" | "register" = "forgotPassword") {
+  const smtpHost = "smtp.gmail.com";
+  const smtpPort = 587;
+  const smtpSecure = false;
+  const smtpUser = "finditcityofmalabonuniversity@gmail.com";
+  const smtpPass = "exzj cdcj nvul okmp".replace(/\s+/g, "");
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: smtpUser, pass: smtpPass }
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: { user: smtpUser, pass: smtpPass },
+    tls: {
+      // Improves compatibility with some local/dev SMTP setups.
+      rejectUnauthorized: false
+    }
   });
 
-  await transporter.sendMail({
-    from: `"FindIt CMU" <${smtpUser}>`,
-    to: toEmail,
-    subject: "FindIt CMU - Password Reset OTP",
-    text: `Your FindIt CMU password reset OTP is: ${otp}. This OTP expires in 10 minutes. If you did not request this, ignore this email.`,
-    html: `
-      <div style="margin:0;padding:24px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#111827;">
-        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
-          <tr>
-            <td style="padding:20px 24px;background:#1d4ed8;color:#ffffff;">
-              <h1 style="margin:0;font-size:20px;line-height:28px;">FindIt CMU</h1>
-              <p style="margin:4px 0 0 0;font-size:13px;opacity:0.9;">Password Reset Verification</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:24px;">
-              <p style="margin:0 0 12px 0;font-size:15px;line-height:22px;">Use the One-Time Password (OTP) below to reset your account password:</p>
-              <div style="margin:10px 0 14px 0;padding:14px 16px;border:1px dashed #93c5fd;background:#eff6ff;border-radius:10px;text-align:center;">
-                <span style="font-size:34px;letter-spacing:8px;font-weight:700;color:#1d4ed8;">${otp}</span>
-              </div>
-              <p style="margin:0 0 10px 0;font-size:13px;color:#4b5563;">This OTP will expire in <strong>10 minutes</strong>.</p>
-              <p style="margin:0;font-size:13px;color:#6b7280;">If you did not request a password reset, you can safely ignore this email.</p>
-            </td>
-          </tr>
-        </table>
-      </div>
-    `
-  });
+  const emailMeta = {
+    forgotPassword: {
+      subject: "FindIt CMU - Password Reset OTP",
+      heading: "Password Reset Verification",
+      intro: "Use the One-Time Password (OTP) below to reset your account password:",
+      footer: "If you did not request a password reset, you can safely ignore this email."
+    },
+    register: {
+      subject: "FindIt CMU - Registration Verification OTP",
+      heading: "Registration Email Verification",
+      intro: "Use the One-Time Password (OTP) below to verify your email and complete registration:",
+      footer: "If you did not start a registration, you can safely ignore this email."
+    }
+  } as const;
+
+  const selected = emailMeta[purpose];
+
+  try {
+    await transporter.verify();
+    await transporter.sendMail({
+      from: `"FindIt CMU" <${smtpUser}>`,
+      to: toEmail,
+      subject: selected.subject,
+      text: `${selected.intro} ${otp}. This OTP expires in 10 minutes. ${selected.footer}`,
+      html: `
+        <div style="margin:0;padding:24px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="padding:20px 24px;background:#1d4ed8;color:#ffffff;">
+                <h1 style="margin:0;font-size:20px;line-height:28px;">FindIt CMU</h1>
+                <p style="margin:4px 0 0 0;font-size:13px;opacity:0.9;">${selected.heading}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px;">
+                <p style="margin:0 0 12px 0;font-size:15px;line-height:22px;">${selected.intro}</p>
+                <div style="margin:10px 0 14px 0;padding:14px 16px;border:1px dashed #93c5fd;background:#eff6ff;border-radius:10px;text-align:center;">
+                  <span style="font-size:34px;letter-spacing:8px;font-weight:700;color:#1d4ed8;">${otp}</span>
+                </div>
+                <p style="margin:0 0 10px 0;font-size:13px;color:#4b5563;">This OTP will expire in <strong>10 minutes</strong>.</p>
+                <p style="margin:0;font-size:13px;color:#6b7280;">${selected.footer}</p>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown SMTP error";
+    // eslint-disable-next-line no-console
+    console.error(`OTP email send failed for ${toEmail}: ${message}`);
+    throw new Error(`Unable to send OTP email: ${message}`);
+  }
 }
 
 export async function register(req: Request, res: Response) {
-  const { name, email, password } = req.body as { name?: string; email?: string; password?: string };
+  const { name, email, password, otp } = req.body as { name?: string; email?: string; password?: string; otp?: string };
 
-  if (!name || !email || !password) return res.status(400).json({ message: "name, email, password are required" });
+  if (!name || !email || !password || !otp) {
+    return res.status(400).json({ message: "name, email, password, and otp are required" });
+  }
 
-  const existing = await User.findOne({ email: email.toLowerCase() });
+  const normalizedEmail = email.toLowerCase().trim();
+  if (!CMU_EMAIL_PATTERN.test(normalizedEmail)) {
+    return res.status(400).json({ message: "Email must be in 2022xxxxx@cityofmalabonuniversity.edu.ph format" });
+  }
+
+  const otpRecord = await EmailOtp.findOne({ email: normalizedEmail, purpose: "registration" });
+  if (!otpRecord || otpRecord.expiresAt.getTime() < Date.now() || otpRecord.otpHash !== hashOtp(otp)) {
+    return res.status(400).json({ message: "Invalid or expired OTP" });
+  }
+
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) return res.status(409).json({ message: "Email already in use" });
 
   const hashed = await bcrypt.hash(password, 10);
-  const created = await User.create({ name, email: email.toLowerCase(), password: hashed, role: "user" });
+  const created = await User.create({ name, email: normalizedEmail, password: hashed, role: "user" });
+  await EmailOtp.deleteMany({ email: normalizedEmail, purpose: "registration" });
 
   const safeUser = { id: created._id.toString(), name: created.name, email: created.email, role: created.role as "admin" | "user" };
   const token = signToken(safeUser);
@@ -115,7 +164,10 @@ export async function requestPasswordResetOtp(req: Request, res: Response) {
   const { email } = req.body as { email?: string };
   if (!email) return res.status(400).json({ message: "email is required" });
 
-  const normalizedEmail = email.toLowerCase();
+  const normalizedEmail = email.toLowerCase().trim();
+  if (!CMU_EMAIL_PATTERN.test(normalizedEmail)) {
+    return res.status(400).json({ message: "Email must be in 2022xxxxx@cityofmalabonuniversity.edu.ph format" });
+  }
   const user = await User.findOne({ email: normalizedEmail });
 
   // Return a generic success response to avoid exposing if an email is registered.
@@ -126,7 +178,47 @@ export async function requestPasswordResetOtp(req: Request, res: Response) {
   user.resetOtpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
   await user.save();
 
-  await sendResetOtpEmail(user.email, otp);
+  try {
+    await sendResetOtpEmail(user.email, otp);
+  } catch {
+    user.resetOtpHash = undefined;
+    user.resetOtpExpiresAt = undefined;
+    await user.save();
+    return res.status(500).json({ message: "Failed to send OTP email. Check SMTP login/app password." });
+  }
+  return res.json({ ok: true });
+}
+
+export async function requestRegistrationOtp(req: Request, res: Response) {
+  const { email } = req.body as { email?: string };
+  if (!email) return res.status(400).json({ message: "email is required" });
+
+  const normalizedEmail = email.toLowerCase().trim();
+  if (!CMU_EMAIL_PATTERN.test(normalizedEmail)) {
+    return res.status(400).json({ message: "Email must be in 2022xxxxx@cityofmalabonuniversity.edu.ph format" });
+  }
+
+  const existing = await User.findOne({ email: normalizedEmail });
+  if (existing) return res.status(409).json({ message: "Email already in use" });
+
+  const otp = generateOtp();
+  await EmailOtp.findOneAndUpdate(
+    { email: normalizedEmail, purpose: "registration" },
+    {
+      email: normalizedEmail,
+      purpose: "registration",
+      otpHash: hashOtp(otp),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
+  );
+
+  try {
+    await sendResetOtpEmail(normalizedEmail, otp, "register");
+  } catch {
+    await EmailOtp.deleteMany({ email: normalizedEmail, purpose: "registration" });
+    return res.status(500).json({ message: "Failed to send OTP email. Check SMTP login/app password." });
+  }
   return res.json({ ok: true });
 }
 
