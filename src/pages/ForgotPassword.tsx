@@ -18,6 +18,7 @@ const ForgotPassword = () => {
   const { requestPasswordResetOtp, verifyPasswordResetOtp, resetPasswordWithOtp } = useAuth();
   const { toast } = useToast();
   const cmuEmailPattern = /^2022\d{5}@cityofmalabonuniversity\.edu\.ph$/i;
+  const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
   const handleOtpChange = (value: string) => {
     const digitsOnly = value.replace(/\D/g, "").slice(0, 6);
@@ -58,8 +59,12 @@ const ForgotPassword = () => {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      toast({ title: "Weak password", description: "Password must be at least 6 characters.", variant: "destructive" });
+    if (!strongPasswordPattern.test(newPassword)) {
+      toast({
+        title: "Weak password",
+        description: "Use at least 8 characters with uppercase, lowercase, number, and special character.",
+        variant: "destructive"
+      });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -139,7 +144,8 @@ const ForgotPassword = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-password">New Password</Label>
-                    <PasswordInput id="new-password" placeholder="At least 6 characters" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
+                    <PasswordInput id="new-password" placeholder="Min. 8 chars, Aa1!" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
+                    <p className="text-xs text-muted-foreground">Use 8+ chars with uppercase, lowercase, number, and special character.</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm Password</Label>

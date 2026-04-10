@@ -7,6 +7,9 @@ import { User } from "../models/User";
 import { EmailOtp } from "../models/EmailOtp";
 
 const CMU_EMAIL_PATTERN = /^2022\d{5}@cityofmalabonuniversity\.edu\.ph$/i;
+const STRONG_PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+const STRONG_PASSWORD_MESSAGE =
+  "Password must be at least 8 characters and include uppercase, lowercase, number, and special character";
 
 function signToken(user: { id: string; role: "admin" | "user"; name: string; email: string }) {
   const secret = process.env.JWT_SECRET;
@@ -106,6 +109,9 @@ export async function register(req: Request, res: Response) {
   const normalizedEmail = email.toLowerCase().trim();
   if (!CMU_EMAIL_PATTERN.test(normalizedEmail)) {
     return res.status(400).json({ message: "Email must be in 2022xxxxx@cityofmalabonuniversity.edu.ph format" });
+  }
+  if (!STRONG_PASSWORD_PATTERN.test(password)) {
+    return res.status(400).json({ message: STRONG_PASSWORD_MESSAGE });
   }
 
   const otpRecord = await EmailOtp.findOne({ email: normalizedEmail, purpose: "registration" });
@@ -227,8 +233,8 @@ export async function resetPasswordWithOtp(req: Request, res: Response) {
   if (!email || !otp || !newPassword) {
     return res.status(400).json({ message: "email, otp, and newPassword are required" });
   }
-  if (newPassword.length < 6) {
-    return res.status(400).json({ message: "Password must be at least 6 characters" });
+  if (!STRONG_PASSWORD_PATTERN.test(newPassword)) {
+    return res.status(400).json({ message: STRONG_PASSWORD_MESSAGE });
   }
 
   const normalizedEmail = email.toLowerCase();
@@ -303,8 +309,8 @@ export async function updateProfile(req: Request, res: Response) {
     if (!currentPassword) {
       return res.status(400).json({ message: "Current password is required to set a new password" });
     }
-    if (newPassword!.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    if (!STRONG_PASSWORD_PATTERN.test(newPassword!)) {
+      return res.status(400).json({ message: STRONG_PASSWORD_MESSAGE });
     }
     const ok = await bcrypt.compare(currentPassword, user.password);
     if (!ok) return res.status(400).json({ message: "Current password is incorrect" });

@@ -20,6 +20,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const cmuEmailPattern = /^2022\d{5}@cityofmalabonuniversity\.edu\.ph$/i;
+  const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
   const handleRequestOtp = async () => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -59,8 +60,12 @@ const Register = () => {
       toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
       return;
     }
-    if (password.length < 6) {
-      toast({ title: "Error", description: "Password must be at least 6 characters.", variant: "destructive" });
+    if (!strongPasswordPattern.test(password)) {
+      toast({
+        title: "Weak password",
+        description: "Use at least 8 characters with uppercase, lowercase, number, and special character.",
+        variant: "destructive"
+      });
       return;
     }
     if (await register(name, normalizedEmail, password, otp)) {
@@ -119,7 +124,14 @@ const Register = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <PasswordInput id="password" placeholder="Min. 6 characters" value={password} onChange={e => setPassword(e.target.value)} required />
+              <PasswordInput
+                id="password"
+                placeholder="Min. 8 chars, Aa1!"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">Use 8+ chars with uppercase, lowercase, number, and special character.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm">Confirm Password</Label>
